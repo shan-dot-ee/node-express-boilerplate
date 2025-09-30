@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const { ValidationError } = require('sequelize');
 const httpStatus = require('http-status');
 const httpMocks = require('node-mocks-http');
 const { errorConverter, errorHandler } = require('../../../src/middlewares/error');
@@ -67,8 +67,8 @@ describe('Error middlewares', () => {
       );
     });
 
-    test('should convert a Mongoose error to ApiError with status 400 and preserve its message', () => {
-      const error = new mongoose.Error('Any mongoose error');
+    test('should convert a Sequelize ValidationError to ApiError with status 400 and preserve its message', () => {
+      const error = new ValidationError('Any validation error');
       const next = jest.fn();
 
       errorConverter(error, httpMocks.createRequest(), httpMocks.createResponse(), next);

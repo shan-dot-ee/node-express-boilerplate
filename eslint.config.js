@@ -3,17 +3,14 @@ const js = require('@eslint/js');
 const jestPlugin = require('eslint-plugin-jest');
 const securityPlugin = require('eslint-plugin-security');
 const prettierConfig = require('eslint-config-prettier');
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-  recommendedConfig: js.configs.recommended,
-});
+const importPlugin = require('eslint-plugin-import');
 
 module.exports = [
   {
     ignores: ['node_modules/**', 'bin/**', 'eslint.config.js'],
   },
-  ...compat.extends('airbnb-base'),
+  js.configs.recommended,
+  importPlugin.flatConfigs.recommended, // import rules
   jestPlugin.configs['flat/recommended'],
   securityPlugin.configs.recommended,
   prettierConfig,
@@ -24,6 +21,9 @@ module.exports = [
       globals: {
         node: true,
         jest: true,
+        process: 'readonly',
+        __dirname: 'readonly',
+        console: 'readonly',
       },
     },
     rules: {

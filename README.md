@@ -73,7 +73,7 @@ yarn db:seed
 - [Authentication](#authentication)
 - [Authorization](#authorization)
 - [Logging](#logging)
-- [Custom Mongoose Plugins](#custom-mongoose-plugins)
+- [Pagination](#pagination)
 - [Linting](#linting)
 - [Contributing](#contributing)
 
@@ -214,7 +214,7 @@ src\
  |--controllers\    # Route controllers (controller layer)
  |--docs\           # Swagger files
  |--middlewares\    # Custom express middlewares
- |--models\         # Mongoose models (data layer)
+ |--models\         # Sequelize models (data layer)
  |--routes\         # Routes
  |--services\       # Business logic (service layer)
  |--utils\          # Utility classes and functions
@@ -380,48 +380,29 @@ This app uses pm2 in production mode, which is already configured to store the l
 
 Note: API request information (request url, response code, timestamp, etc.) are also automatically logged (using [morgan](https://github.com/expressjs/morgan)).
 
-## Custom Mongoose Plugins
+## Pagination
 
-The app also contains 2 custom mongoose plugins that you can attach to any mongoose model schema. You can find the plugins in `src/models/plugins`.
+Pagination is implemented using a custom utility function in `src/utils/paginate.js` that works with Sequelize models.
 
-```javascript
-const mongoose = require('mongoose');
-const { toJSON, paginate } = require('./plugins');
-
-const userSchema = mongoose.Schema(
-  {
-    /* schema definition here */
-  },
-  { timestamps: true }
-);
-
-userSchema.plugin(toJSON);
-userSchema.plugin(paginate);
-
-const User = mongoose.model('User', userSchema);
-```
-
-### toJSON
-
-The toJSON plugin applies the following changes in the toJSON transform call:
-
-- removes \_\_v, createdAt, updatedAt, and any schema path that has private: true
-- replaces \_id with id
-
-### paginate
-
-The paginate plugin adds the `paginate` static method to the mongoose schema.
-
-Adding this plugin to the `User` model schema will allow you to do the following:
+To use pagination in your services:
 
 ```javascript
+const paginate = require('../utils/paginate');
+
 const queryUsers = async (filter, options) => {
-  const users = await User.paginate(filter, options);
+  const users = await paginate(User, filter, options);
   return users;
 };
 ```
 
-The `filter` param is a regular mongo filter.
+The `filter` param is a Sequelize where clause object:
+
+```javascript
+const filter = {
+  role: 'user',
+  isEmailVerified: true
+};
+```
 
 The `options` param can have the following (optional) fields:
 
@@ -433,9 +414,9 @@ const options = {
 };
 ```
 
-The plugin also supports sorting by multiple criteria (separated by a comma): `sortBy: name:desc,role:asc`
+Pagination also supports sorting by multiple criteria (separated by a comma): `sortBy: name:desc,role:asc`
 
-The `paginate` method returns a Promise, which fulfills with an object having the following properties:
+The `paginate` function returns a Promise, which fulfills with an object having the following properties:
 
 ```json
 {
@@ -446,6 +427,10 @@ The `paginate` method returns a Promise, which fulfills with an object having th
   "totalResults": 48
 }
 ```
+
+### Model JSON Serialization
+
+Sequelize models automatically handle JSON serialization. Sensitive fields like passwords are excluded using the `defaultScope` or custom `toJSON` methods in the model definition.
 
 ## Linting
 

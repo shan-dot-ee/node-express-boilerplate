@@ -57,7 +57,7 @@ const User = sequelize.define(
     hooks: {
       beforeSave: async (user) => {
         if (user.changed('password')) {
-          // eslint-disable-next-line no-param-reassign
+           
           user.password = await bcrypt.hash(user.password, 8);
         }
       },
