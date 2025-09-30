@@ -4,9 +4,9 @@
 [![Coverage Status](https://coveralls.io/repos/github/hagopj13/node-express-boilerplate/badge.svg?branch=master)](https://coveralls.io/github/hagopj13/node-express-boilerplate?branch=master)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-A boilerplate/starter project for quickly building RESTful APIs using Node.js, Express, and Mongoose.
+A boilerplate/starter project for quickly building RESTful APIs using Node.js, Express, and PostgreSQL with Sequelize.
 
-By running a single command, you will get a production-ready Node.js app installed and fully configured on your machine. The app comes with many built-in features, such as authentication using JWT, request validation, unit and integration tests, continuous integration, docker support, API documentation, pagination, etc. For more details, check the features list below.
+By running a single command, you will get a production-ready Node.js app installed and fully configured on your machine. The app comes with many built-in features, such as authentication using JWT, request validation, unit and integration tests, continuous integration, docker support, API documentation, pagination, database migrations, etc. For more details, check the features list below.
 
 ## Quick Start
 
@@ -48,6 +48,19 @@ cp .env.example .env
 # open .env and modify the environment variables (if needed)
 ```
 
+Setup PostgreSQL database:
+
+```bash
+# Create database
+createdb node_boilerplate
+
+# Run migrations
+yarn db:migrate
+
+# (Optional) Seed database with sample data
+yarn db:seed
+```
+
 ## Table of Contents
 
 - [Features](#features)
@@ -66,7 +79,8 @@ cp .env.example .env
 
 ## Features
 
-- **NoSQL database**: [MongoDB](https://www.mongodb.com) object data modeling using [Mongoose](https://mongoosejs.com)
+- **SQL database**: [PostgreSQL](https://www.postgresql.org) with [Sequelize](https://sequelize.org) ORM
+- **Database migrations**: version-controlled schema changes with Sequelize CLI
 - **Authentication and authorization**: using [passport](http://www.passportjs.org)
 - **Validation**: request data validation using [Joi](https://github.com/hapijs/joi)
 - **Logging**: using [winston](https://github.com/winstonjs/winston) and [morgan](https://github.com/expressjs/morgan)
@@ -77,11 +91,11 @@ cp .env.example .env
 - **Dependency management**: with [Yarn](https://yarnpkg.com)
 - **Environment variables**: using [dotenv](https://github.com/motdotla/dotenv) and [cross-env](https://github.com/kentcdodds/cross-env#readme)
 - **Security**: set security HTTP headers using [helmet](https://helmetjs.github.io)
-- **Santizing**: sanitize request data against xss and query injection
+- **Sanitizing**: sanitize request data against xss
 - **CORS**: Cross-Origin Resource-Sharing enabled using [cors](https://github.com/expressjs/cors)
 - **Compression**: gzip compression with [compression](https://github.com/expressjs/compression)
 - **CI**: continuous integration with [Travis CI](https://travis-ci.org)
-- **Docker support**
+- **Docker support**: with PostgreSQL container
 - **Code coverage**: using [coveralls](https://coveralls.io)
 - **Code quality**: with [Codacy](https://www.codacy.com)
 - **Git hooks**: with [husky](https://github.com/typicode/husky) and [lint-staged](https://github.com/okonet/lint-staged)
@@ -144,6 +158,22 @@ yarn prettier
 yarn prettier:fix
 ```
 
+Database:
+
+```bash
+# run all migrations
+yarn db:migrate
+
+# undo last migration
+yarn db:migrate:undo
+
+# seed database
+yarn db:seed
+
+# reset database (undo all migrations, re-run migrations, seed)
+yarn db:reset
+```
+
 ## Environment Variables
 
 The environment variables can be found and modified in the `.env` file. They come with these default values:
@@ -152,8 +182,8 @@ The environment variables can be found and modified in the `.env` file. They com
 # Port number
 PORT=3000
 
-# URL of the Mongo DB
-MONGODB_URL=mongodb://127.0.0.1:27017/node-boilerplate
+# PostgreSQL Database URL
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/node_boilerplate
 
 # JWT
 # JWT secret key
@@ -162,6 +192,10 @@ JWT_SECRET=thisisasamplesecret
 JWT_ACCESS_EXPIRATION_MINUTES=30
 # Number of days after which a refresh token expires
 JWT_REFRESH_EXPIRATION_DAYS=30
+# Number of minutes after which a reset password token expires
+JWT_RESET_PASSWORD_EXPIRATION_MINUTES=10
+# Number of minutes after which a verify email token expires
+JWT_VERIFY_EMAIL_EXPIRATION_MINUTES=10
 
 # SMTP configuration options for the email service
 # For testing, you can use a fake SMTP service like Ethereal: https://ethereal.email/create

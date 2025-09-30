@@ -1,67 +1,83 @@
-const mongoose = require('mongoose');
-const validator = require('validator');
+const { DataTypes, Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
-const { toJSON, paginate } = require('./plugins');
+const { sequelize } = require('./index');
 const { roles } = require('../config/roles');
 
-const userSchema = mongoose.Schema(
+const User = sequelize.define(
+  'User',
   {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
+    },
     name: {
-      type: String,
-      required: true,
-      trim: true,
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        notEmpty: true,
+      },
     },
     email: {
-      type: String,
-      required: true,
+      type: DataTypes.STRING,
+      allowNull: false,
       unique: true,
-      trim: true,
-      lowercase: true,
-      validate(value) {
-        if (!validator.isEmail(value)) {
-          throw new Error('Invalid email');
-        }
+      validate: {
+        isEmail: true,
+        isLowercase: true,
+      },
+      set(value) {
+        this.setDataValue('email', value.toLowerCase().trim());
       },
     },
     password: {
-      type: String,
-      required: true,
-      trim: true,
-      minlength: 8,
-      validate(value) {
-        if (!value.match(/\d/) || !value.match(/[a-zA-Z]/)) {
-          throw new Error('Password must contain at least one letter and one number');
-        }
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        len: [8, 255],
+        isValidPassword(value) {
+          if (!value.match(/\d/) || !value.match(/[a-zA-Z]/)) {
+            throw new Error('Password must contain at least one letter and one number');
+          }
+        },
       },
-      private: true, // used by the toJSON plugin
     },
     role: {
-      type: String,
-      enum: roles,
-      default: 'user',
+      type: DataTypes.ENUM(...roles),
+      defaultValue: 'user',
     },
     isEmailVerified: {
-      type: Boolean,
-      default: false,
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
   },
   {
+    tableName: 'users',
     timestamps: true,
+    hooks: {
+      beforeSave: async (user) => {
+        if (user.changed('password')) {
+          // eslint-disable-next-line no-param-reassign
+          user.password = await bcrypt.hash(user.password, 8);
+        }
+      },
+    },
   }
 );
-
-// add plugin that converts mongoose to json
-userSchema.plugin(toJSON);
-userSchema.plugin(paginate);
 
 /**
  * Check if email is taken
  * @param {string} email - The user's email
- * @param {ObjectId} [excludeUserId] - The id of the user to be excluded
+ * @param {UUID} [excludeUserId] - The id of the user to be excluded
  * @returns {Promise<boolean>}
  */
-userSchema.statics.isEmailTaken = async function (email, excludeUserId) {
-  const user = await this.findOne({ email, _id: { $ne: excludeUserId } });
+User.isEmailTaken = async function (email, excludeUserId) {
+  const user = await this.findOne({
+    where: {
+      email,
+      ...(excludeUserId && { id: { [Op.ne]: excludeUserId } }),
+    },
+  });
   return !!user;
 };
 
@@ -70,22 +86,20 @@ userSchema.statics.isEmailTaken = async function (email, excludeUserId) {
  * @param {string} password
  * @returns {Promise<boolean>}
  */
-userSchema.methods.isPasswordMatch = async function (password) {
-  const user = this;
-  return bcrypt.compare(password, user.password);
+User.prototype.isPasswordMatch = async function (password) {
+  return bcrypt.compare(password, this.password);
 };
 
-userSchema.pre('save', async function (next) {
-  const user = this;
-  if (user.isModified('password')) {
-    user.password = await bcrypt.hash(user.password, 8);
-  }
-  next();
-});
+/**
+ * Transform user object for JSON response (exclude password)
+ */
+User.prototype.toJSON = function () {
+  const values = { ...this.get() };
+  delete values.password;
+  return values;
+};
 
 /**
  * @typedef User
  */
-const User = mongoose.model('User', userSchema);
-
 module.exports = User;

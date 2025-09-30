@@ -1,44 +1,56 @@
-const mongoose = require('mongoose');
-const { toJSON } = require('./plugins');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('./index');
 const { tokenTypes } = require('../config/tokens');
 
-const tokenSchema = mongoose.Schema(
+const Token = sequelize.define(
+  'Token',
   {
-    token: {
-      type: String,
-      required: true,
-      index: true,
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
     },
-    user: {
-      type: mongoose.SchemaTypes.ObjectId,
-      ref: 'User',
-      required: true,
+    token: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    userId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: 'users',
+        key: 'id',
+      },
+      onDelete: 'CASCADE',
     },
     type: {
-      type: String,
-      enum: [tokenTypes.REFRESH, tokenTypes.RESET_PASSWORD, tokenTypes.VERIFY_EMAIL],
-      required: true,
+      type: DataTypes.ENUM(tokenTypes.REFRESH, tokenTypes.RESET_PASSWORD, tokenTypes.VERIFY_EMAIL),
+      allowNull: false,
     },
     expires: {
-      type: Date,
-      required: true,
+      type: DataTypes.DATE,
+      allowNull: false,
     },
     blacklisted: {
-      type: Boolean,
-      default: false,
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
   },
   {
+    tableName: 'tokens',
     timestamps: true,
+    indexes: [
+      {
+        fields: ['token'],
+      },
+      {
+        fields: ['userId'],
+      },
+    ],
   }
 );
-
-// add plugin that converts mongoose to json
-tokenSchema.plugin(toJSON);
 
 /**
  * @typedef Token
  */
-const Token = mongoose.model('Token', tokenSchema);
-
 module.exports = Token;
