@@ -1,5 +1,5 @@
 const { ValidationError } = require('sequelize');
-const httpStatus = require('http-status');
+const httpStatus = require('../../../src/utils/httpStatus');
 const httpMocks = require('node-mocks-http');
 const { errorConverter, errorHandler } = require('../../../src/middlewares/error');
 const ApiError = require('../../../src/utils/ApiError');

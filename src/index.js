@@ -15,7 +15,8 @@ sequelize
     });
   })
   .catch((error) => {
-    logger.error('Unable to connect to PostgreSQL:', error);
+    logger.error('Unable to connect to PostgreSQL:');
+    logger.error(error);
     process.exit(1);
   });
 

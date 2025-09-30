@@ -1,6 +1,6 @@
 const request = require('supertest');
 const faker = require('faker');
-const httpStatus = require('http-status');
+const httpStatus = require('../../src/utils/httpStatus');
 const app = require('../../src/app');
 const setupTestDB = require('../utils/setupTestDB');
 const { User } = require('../../src/models');

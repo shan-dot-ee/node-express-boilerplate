@@ -1,6 +1,6 @@
 const request = require('supertest');
 const faker = require('faker');
-const httpStatus = require('http-status');
+const httpStatus = require('../../src/utils/httpStatus');
 const httpMocks = require('node-mocks-http');
 const moment = require('moment');
 const bcrypt = require('bcryptjs');
