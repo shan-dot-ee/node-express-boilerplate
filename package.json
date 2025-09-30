@@ -74,20 +74,22 @@
     "xss-clean": "^0.1.1"
   },
   "devDependencies": {
-    "eslint": "^7.0.0",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.36.0",
+    "eslint": "9.36.0",
     "eslint-config-airbnb-base": "^14.0.0",
-    "eslint-config-prettier": "^8.1.0",
-    "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-jest": "^24.0.1",
-    "eslint-plugin-prettier": "^3.1.1",
-    "eslint-plugin-security": "^1.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jest": "^29.0.1",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-security": "^3.0.1",
     "faker": "^5.1.0",
     "husky": "9.1.7",
     "jest": "^30.2.0",
     "lint-staged": "^11.0.0",
     "node-mocks-http": "^1.8.0",
     "nodemon": "3.1.10",
-    "prettier": "^2.0.5",
+    "prettier": "^3.6.2",
     "supertest": "^6.0.1"
   }
 }

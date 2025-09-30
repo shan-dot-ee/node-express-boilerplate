@@ -46,7 +46,7 @@ const refreshAuth = async (refreshToken) => {
     }
     await refreshTokenDoc.remove();
     return tokenService.generateAuthTokens(user);
-  } catch (error) {
+  } catch {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Please authenticate');
   }
 };
@@ -66,7 +66,7 @@ const resetPassword = async (resetPasswordToken, newPassword) => {
     }
     await userService.updateUserById(user.id, { password: newPassword });
     await Token.deleteMany({ user: user.id, type: tokenTypes.RESET_PASSWORD });
-  } catch (error) {
+  } catch {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Password reset failed');
   }
 };
@@ -85,7 +85,7 @@ const verifyEmail = async (verifyEmailToken) => {
     }
     await Token.deleteMany({ user: user.id, type: tokenTypes.VERIFY_EMAIL });
     await userService.updateUserById(user.id, { isEmailVerified: true });
-  } catch (error) {
+  } catch {
     throw new ApiError(httpStatus.UNAUTHORIZED, 'Email verification failed');
   }
 };
