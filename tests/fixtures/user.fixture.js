@@ -1,4 +1,3 @@
-const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const faker = require('faker');
 const User = require('../../src/models/user.model');
@@ -8,7 +7,6 @@ const salt = bcrypt.genSaltSync(8);
 const hashedPassword = bcrypt.hashSync(password, salt);
 
 const userOne = {
-  id: uuidv4(),
   name: faker.name.findName(),
   email: faker.internet.email().toLowerCase(),
   password,
@@ -17,7 +15,6 @@ const userOne = {
 };
 
 const userTwo = {
-  id: uuidv4(),
   name: faker.name.findName(),
   email: faker.internet.email().toLowerCase(),
   password,
@@ -26,7 +23,6 @@ const userTwo = {
 };
 
 const admin = {
-  id: uuidv4(),
   name: faker.name.findName(),
   email: faker.internet.email().toLowerCase(),
   password,
@@ -35,10 +31,33 @@ const admin = {
 };
 
 const insertUsers = async (users) => {
-  await User.bulkCreate(
+  // First, clean up IDs from previous test runs
+  users.forEach((user) => {
+    delete user.id;
+    delete user.createdAt;
+    delete user.updatedAt;
+  });
+
+  const createdUsers = await User.bulkCreate(
     users.map((user) => ({ ...user, password: hashedPassword })),
-    { validate: true }
+    { validate: true, returning: true }
   );
+
+  // Update the fixture objects with generated IDs and other fields
+  users.forEach((user, index) => {
+    const created = createdUsers[index];
+    Object.assign(user, {
+      id: created.id,
+      name: created.name,
+      email: created.email,
+      role: created.role,
+      isEmailVerified: created.isEmailVerified,
+      createdAt: created.createdAt,
+      updatedAt: created.updatedAt,
+    });
+  });
+
+  return createdUsers;
 };
 
 module.exports = {

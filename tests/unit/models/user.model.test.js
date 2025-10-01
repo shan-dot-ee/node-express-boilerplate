@@ -1,5 +1,8 @@
 const faker = require('faker');
 const { User } = require('../../../src/models');
+const setupTestDB = require('../../utils/setupTestDB');
+
+setupTestDB();
 
 describe('User model', () => {
   describe('User validation', () => {
@@ -14,7 +17,7 @@ describe('User model', () => {
     });
 
     test('should correctly validate a valid user', async () => {
-      await expect(new User(newUser).validate()).resolves.toBeUndefined();
+      await expect(new User(newUser).validate()).resolves.toBeDefined();
     });
 
     test('should throw a validation error if email is invalid', async () => {
@@ -39,7 +42,8 @@ describe('User model', () => {
 
     test('should throw a validation error if role is unknown', async () => {
       newUser.role = 'invalid';
-      await expect(new User(newUser).validate()).rejects.toThrow();
+      // Sequelize ENUM validation only throws on create/save, not on validate()
+      await expect(User.create(newUser)).rejects.toThrow();
     });
   });
 

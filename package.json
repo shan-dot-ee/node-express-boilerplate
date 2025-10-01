@@ -75,11 +75,11 @@
     "swagger-jsdoc": "^6.0.8",
     "swagger-ui-express": "^4.1.6",
     "umzug": "^3.8.2",
-    "uuid": "^13.0.0",
     "validator": "^13.0.0",
     "winston": "^3.2.1"
   },
   "devDependencies": {
+    "uuid": "^13.0.0",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.36.0",
     "eslint": "9.36.0",

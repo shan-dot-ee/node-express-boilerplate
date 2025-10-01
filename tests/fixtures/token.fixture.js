@@ -4,11 +4,22 @@ const { tokenTypes } = require('../../src/config/tokens');
 const tokenService = require('../../src/services/token.service');
 const { userOne, admin } = require('./user.fixture');
 
-const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes');
-const userOneAccessToken = tokenService.generateToken(userOne._id, accessTokenExpires, tokenTypes.ACCESS);
-const adminAccessToken = tokenService.generateToken(admin._id, accessTokenExpires, tokenTypes.ACCESS);
-
-module.exports = {
-  userOneAccessToken,
-  adminAccessToken,
+// Generate access tokens dynamically after users are inserted
+const getUserOneAccessToken = () => {
+  const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes');
+  return tokenService.generateToken(userOne.id, accessTokenExpires, tokenTypes.ACCESS);
 };
+
+const getAdminAccessToken = () => {
+  const accessTokenExpires = moment().add(config.jwt.accessExpirationMinutes, 'minutes');
+  return tokenService.generateToken(admin.id, accessTokenExpires, tokenTypes.ACCESS);
+};
+
+// For backward compatibility, expose as getters
+Object.defineProperty(exports, 'userOneAccessToken', {
+  get: getUserOneAccessToken,
+});
+
+Object.defineProperty(exports, 'adminAccessToken', {
+  get: getAdminAccessToken,
+});
