@@ -14,6 +14,21 @@ const paginate = async (model, filter = {}, options = {}) => {
   if (options.sortBy) {
     const sortingCriteria = options.sortBy.split(',').map((sortOption) => {
       const [key, order] = sortOption.split(':');
+
+      // If the attribute is an ENUM on the model, cast it to TEXT so sorting
+      // is alphabetical instead of using the ENUM internal order (Postgres)
+      try {
+        if (model && model.rawAttributes && model.rawAttributes[key]) {
+          const attrType = model.rawAttributes[key].type;
+          const typeKey = attrType && (attrType.key || (attrType.constructor && attrType.constructor.key));
+          if (typeKey === 'ENUM' && model.sequelize && model.sequelize.cast && model.sequelize.col) {
+            return [model.sequelize.cast(model.sequelize.col(key), 'TEXT'), order === 'desc' ? 'DESC' : 'ASC'];
+          }
+        }
+      } catch {
+        // If anything goes wrong inspecting the model, fall back to default behavior
+      }
+
       return [key, order === 'desc' ? 'DESC' : 'ASC'];
     });
     sort = sortingCriteria;

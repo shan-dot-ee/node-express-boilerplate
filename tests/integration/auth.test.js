@@ -40,6 +40,8 @@ describe('Auth routes', () => {
         email: newUser.email,
         role: 'user',
         isEmailVerified: false,
+        updatedAt: expect.anything(),
+        createdAt: expect.anything(),
       });
 
       const dbUser = await User.findByPk(res.body.user.id);
@@ -99,6 +101,8 @@ describe('Auth routes', () => {
         email: userOne.email,
         role: userOne.role,
         isEmailVerified: userOne.isEmailVerified,
+        updatedAt: expect.anything(),
+        createdAt: expect.anything(),
       });
 
       expect(res.body.tokens).toEqual({
@@ -226,13 +230,23 @@ describe('Auth routes', () => {
       await request(app).post('/v1/auth/refresh-tokens').send({ refreshToken }).expect(httpStatus.UNAUTHORIZED);
     });
 
-    test('should return 401 error if user is not found', async () => {
+    test('should return 401 error if refresh token is not found in database', async () => {
       const fakeUserId = uuidv4();
       const expires = moment().add(config.jwt.refreshExpirationDays, 'days');
       const refreshToken = tokenService.generateToken(fakeUserId, expires, tokenTypes.REFRESH);
-      await tokenService.saveToken(refreshToken, fakeUserId, expires, tokenTypes.REFRESH);
 
       await request(app).post('/v1/auth/refresh-tokens').send({ refreshToken }).expect(httpStatus.UNAUTHORIZED);
+    });
+
+    test('should return 401 when trying to create a refresh token for a non-existent user', async () => {
+      const fakeUserId = uuidv4();
+      const expires = moment().add(config.jwt.verifyEmailExpirationMinutes, 'minutes');
+      const verifyEmailToken = tokenService.generateToken(fakeUserId, expires);
+
+      await expect(tokenService.saveToken(verifyEmailToken, fakeUserId, expires, tokenTypes.REFRESH)).rejects.toMatchObject({
+        statusCode: httpStatus.UNAUTHORIZED,
+        message: 'User not found',
+      });
     });
   });
 
@@ -281,7 +295,9 @@ describe('Auth routes', () => {
       const isPasswordMatch = await bcrypt.compare('password2', dbUser.password);
       expect(isPasswordMatch).toBe(true);
 
-      const dbResetPasswordTokenCount = await Token.count({ where: { userId: userOne.id, type: tokenTypes.RESET_PASSWORD } });
+      const dbResetPasswordTokenCount = await Token.count({
+        where: { userId: userOne.id, type: tokenTypes.RESET_PASSWORD },
+      });
       expect(dbResetPasswordTokenCount).toBe(0);
     });
 
@@ -317,17 +333,26 @@ describe('Auth routes', () => {
         .expect(httpStatus.UNAUTHORIZED);
     });
 
-    test('should return 401 if user is not found', async () => {
+    test('should return 401 if reset password token is not found in database', async () => {
       const fakeUserId = uuidv4();
       const expires = moment().add(config.jwt.resetPasswordExpirationMinutes, 'minutes');
       const resetPasswordToken = tokenService.generateToken(fakeUserId, expires, tokenTypes.RESET_PASSWORD);
-      await tokenService.saveToken(resetPasswordToken, fakeUserId, expires, tokenTypes.RESET_PASSWORD);
 
       await request(app)
         .post('/v1/auth/reset-password')
         .query({ token: resetPasswordToken })
         .send({ password: 'password2' })
         .expect(httpStatus.UNAUTHORIZED);
+    });
+
+    test('should return 401 when trying to create a password reset token for a non-existent user', async () => {
+      const fakeUserId = uuidv4();
+      const expires = moment().add(config.jwt.verifyEmailExpirationMinutes, 'minutes');
+      const resetPasswordToken = tokenService.generateToken(fakeUserId, expires);
+
+      await expect(
+        tokenService.saveToken(resetPasswordToken, fakeUserId, expires, tokenTypes.RESET_PASSWORD),
+      ).rejects.toMatchObject({ statusCode: httpStatus.UNAUTHORIZED, message: 'User not found' });
     });
 
     test('should return 400 if password is missing or invalid', async () => {
@@ -444,17 +469,26 @@ describe('Auth routes', () => {
         .expect(httpStatus.UNAUTHORIZED);
     });
 
-    test('should return 401 if user is not found', async () => {
+    test('should return 401 if verify token is missing from database', async () => {
       const fakeUserId = uuidv4();
       const expires = moment().add(config.jwt.verifyEmailExpirationMinutes, 'minutes');
       const verifyEmailToken = tokenService.generateToken(fakeUserId, expires);
-      await tokenService.saveToken(verifyEmailToken, fakeUserId, expires, tokenTypes.VERIFY_EMAIL);
 
       await request(app)
         .post('/v1/auth/verify-email')
         .query({ token: verifyEmailToken })
         .send()
         .expect(httpStatus.UNAUTHORIZED);
+    });
+
+    test('should return 401 when trying to create a verify-email token for a non-existent user', async () => {
+      const fakeUserId = uuidv4();
+      const expires = moment().add(config.jwt.verifyEmailExpirationMinutes, 'minutes');
+      const verifyEmailToken = tokenService.generateToken(fakeUserId, expires);
+
+      await expect(
+        tokenService.saveToken(verifyEmailToken, fakeUserId, expires, tokenTypes.VERIFY_EMAIL),
+      ).rejects.toMatchObject({ statusCode: httpStatus.UNAUTHORIZED, message: 'User not found' });
     });
   });
 });
@@ -480,7 +514,7 @@ describe('Auth middleware', () => {
 
     expect(next).toHaveBeenCalledWith(expect.any(ApiError));
     expect(next).toHaveBeenCalledWith(
-      expect.objectContaining({ statusCode: httpStatus.UNAUTHORIZED, message: 'Please authenticate' })
+      expect.objectContaining({ statusCode: httpStatus.UNAUTHORIZED, message: 'Please authenticate' }),
     );
   });
 
@@ -493,7 +527,7 @@ describe('Auth middleware', () => {
 
     expect(next).toHaveBeenCalledWith(expect.any(ApiError));
     expect(next).toHaveBeenCalledWith(
-      expect.objectContaining({ statusCode: httpStatus.UNAUTHORIZED, message: 'Please authenticate' })
+      expect.objectContaining({ statusCode: httpStatus.UNAUTHORIZED, message: 'Please authenticate' }),
     );
   });
 
@@ -508,7 +542,7 @@ describe('Auth middleware', () => {
 
     expect(next).toHaveBeenCalledWith(expect.any(ApiError));
     expect(next).toHaveBeenCalledWith(
-      expect.objectContaining({ statusCode: httpStatus.UNAUTHORIZED, message: 'Please authenticate' })
+      expect.objectContaining({ statusCode: httpStatus.UNAUTHORIZED, message: 'Please authenticate' }),
     );
   });
 
@@ -523,7 +557,7 @@ describe('Auth middleware', () => {
 
     expect(next).toHaveBeenCalledWith(expect.any(ApiError));
     expect(next).toHaveBeenCalledWith(
-      expect.objectContaining({ statusCode: httpStatus.UNAUTHORIZED, message: 'Please authenticate' })
+      expect.objectContaining({ statusCode: httpStatus.UNAUTHORIZED, message: 'Please authenticate' }),
     );
   });
 
@@ -538,7 +572,7 @@ describe('Auth middleware', () => {
 
     expect(next).toHaveBeenCalledWith(expect.any(ApiError));
     expect(next).toHaveBeenCalledWith(
-      expect.objectContaining({ statusCode: httpStatus.UNAUTHORIZED, message: 'Please authenticate' })
+      expect.objectContaining({ statusCode: httpStatus.UNAUTHORIZED, message: 'Please authenticate' }),
     );
   });
 
@@ -550,7 +584,7 @@ describe('Auth middleware', () => {
 
     expect(next).toHaveBeenCalledWith(expect.any(ApiError));
     expect(next).toHaveBeenCalledWith(
-      expect.objectContaining({ statusCode: httpStatus.UNAUTHORIZED, message: 'Please authenticate' })
+      expect.objectContaining({ statusCode: httpStatus.UNAUTHORIZED, message: 'Please authenticate' }),
     );
   });
 

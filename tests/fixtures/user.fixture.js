@@ -1,9 +1,8 @@
-const bcrypt = require('bcryptjs');
 const User = require('../../src/models/user.model');
 
 const password = 'password1';
-const salt = bcrypt.genSaltSync(8);
-const hashedPassword = bcrypt.hashSync(password, salt);
+// Note: we pass the plain password into the model and let the model
+// hash it via its beforeSave hook during tests.
 
 // Use deterministic data for predictable sorting and pagination tests
 const userOne = {
@@ -41,7 +40,9 @@ const insertUsers = async (users) => {
   // Insert users sequentially to ensure different createdAt timestamps
   const createdUsers = [];
   for (const user of users) {
-    const created = await User.create({ ...user, password: hashedPassword });
+    // Pass the plain password from the fixture to allow the model's beforeSave
+    // hook to hash it exactly once.
+    const created = await User.create({ ...user, password: user.password });
     createdUsers.push(created);
 
     // Small delay to ensure different timestamps (only in test environment)

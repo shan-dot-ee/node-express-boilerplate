@@ -47,7 +47,7 @@ const Token = sequelize.define(
         fields: ['userId'],
       },
     ],
-  }
+  },
 );
 
 /**

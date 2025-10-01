@@ -35,6 +35,12 @@ const generateToken = (userId, expires, type, secret = config.jwt.secret) => {
  * @returns {Promise<Token>}
  */
 const saveToken = async (token, userId, expires, type, blacklisted = false) => {
+  // Ensure we never create tokens for missing users
+  const user = await userService.getUserById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'User not found');
+  }
+
   const tokenDoc = await Token.create({
     token,
     userId,

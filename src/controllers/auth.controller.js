@@ -16,22 +16,37 @@ const login = catchAsync(async (req, res) => {
 });
 
 const logout = catchAsync(async (req, res) => {
+  if (!req.body || !req.body.refreshToken) {
+    return res.status(httpStatus.BAD_REQUEST).send({ message: 'Refresh token is required' });
+  }
   await authService.logout(req.body.refreshToken);
   res.status(httpStatus.NO_CONTENT).send();
 });
 
 const refreshTokens = catchAsync(async (req, res) => {
+  if (!req.body || !req.body.refreshToken) {
+    return res.status(httpStatus.BAD_REQUEST).send({ message: 'Refresh token is required' });
+  }
   const tokens = await authService.refreshAuth(req.body.refreshToken);
   res.send({ ...tokens });
 });
 
 const forgotPassword = catchAsync(async (req, res) => {
+  if (!req.body || !req.body.email) {
+    return res.status(httpStatus.BAD_REQUEST).send({ message: 'Email is required' });
+  }
   const resetPasswordToken = await tokenService.generateResetPasswordToken(req.body.email);
   await emailService.sendResetPasswordEmail(req.body.email, resetPasswordToken);
   res.status(httpStatus.NO_CONTENT).send();
 });
 
 const resetPassword = catchAsync(async (req, res) => {
+  if (!req.body || !req.body.password) {
+    return res.status(httpStatus.BAD_REQUEST).send({ message: 'New password is required' });
+  }
+  if (!req.query || !req.query.token) {
+    return res.status(httpStatus.BAD_REQUEST).send({ message: 'Password reset token is required' });
+  }
   await authService.resetPassword(req.query.token, req.body.password);
   res.status(httpStatus.NO_CONTENT).send();
 });
@@ -43,6 +58,9 @@ const sendVerificationEmail = catchAsync(async (req, res) => {
 });
 
 const verifyEmail = catchAsync(async (req, res) => {
+  if (!req.query || !req.query.token) {
+    return res.status(httpStatus.BAD_REQUEST).send({ message: 'Verify email token is required' });
+  }
   await authService.verifyEmail(req.query.token);
   res.status(httpStatus.NO_CONTENT).send();
 });
