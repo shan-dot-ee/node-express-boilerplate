@@ -1,30 +1,30 @@
 const bcrypt = require('bcryptjs');
-const faker = require('faker');
 const User = require('../../src/models/user.model');
 
 const password = 'password1';
 const salt = bcrypt.genSaltSync(8);
 const hashedPassword = bcrypt.hashSync(password, salt);
 
+// Use deterministic data for predictable sorting and pagination tests
 const userOne = {
-  name: faker.name.findName(),
-  email: faker.internet.email().toLowerCase(),
+  name: 'Alice User',
+  email: 'alice.user@example.com',
   password,
   role: 'user',
   isEmailVerified: false,
 };
 
 const userTwo = {
-  name: faker.name.findName(),
-  email: faker.internet.email().toLowerCase(),
+  name: 'Bob User',
+  email: 'bob.user@example.com',
   password,
   role: 'user',
   isEmailVerified: false,
 };
 
 const admin = {
-  name: faker.name.findName(),
-  email: faker.internet.email().toLowerCase(),
+  name: 'Charlie Admin',
+  email: 'charlie.admin@example.com',
   password,
   role: 'admin',
   isEmailVerified: false,
@@ -38,10 +38,16 @@ const insertUsers = async (users) => {
     delete user.updatedAt;
   });
 
-  const createdUsers = await User.bulkCreate(
-    users.map((user) => ({ ...user, password: hashedPassword })),
-    { validate: true, returning: true }
-  );
+  // Insert users sequentially to ensure different createdAt timestamps
+  const createdUsers = [];
+  for (const user of users) {
+    const created = await User.create({ ...user, password: hashedPassword });
+    createdUsers.push(created);
+
+    // Small delay to ensure different timestamps (only in test environment)
+    // eslint-disable-next-line no-undef
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
 
   // Update the fixture objects with generated IDs and other fields
   users.forEach((user, index) => {
